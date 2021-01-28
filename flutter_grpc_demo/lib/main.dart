@@ -28,60 +28,45 @@ class GrpcDemo extends StatefulWidget {
   _GrpcDemoState createState() => _GrpcDemoState();
 }
 
-class Home {
-  final StreamController<String> homeStream = StreamController<String>();
+class _GrpcDemoState extends State<GrpcDemo> {
+  var funcRes = "no function called yet";
+  var funcNames = [];
   static LuaServiceClient client;
-
-  Home() {
-    // client = LuaServiceClient(ClientChannel("127.0.0.1",
-    //     port: 9000,
-    //     options: ChannelOptions(credentials: ChannelCredentials.insecure())));
+  _GrpcDemoState() {
+    print("called");
+    client = LuaServiceClient(ClientChannel("127.0.0.1",
+        port: 9000,
+        options: ChannelOptions(credentials: ChannelCredentials.insecure())));
   }
 
-  var funcResponse = "no function called yet";
+  setNames(names) {
+    setState(() {
+      funcNames = names.funcNames;
+    });
+  }
 
-  Stream<String> get stream => homeStream.stream;
-
-  StreamSubscription<String> get subscription => stream.listen(
-      (data) {
-        print("Data: $data");
-      },
-      onError: (err) {
-        print("Error: $err");
-      },
-      cancelOnError: false,
-      onDone: () {
-        print("Done");
-      });
+  setFuncRes(res) {
+    setState(() {
+      funcRes = res.funcResponse;
+    });
+  }
 
   getFuncNames() {
-    var funcNames = [];
     var req = GetNamesRequest();
     var res = client.getNames(req);
-    res.then((data) => funcNames = data.funcNames);
+    var funcNames = res.then(setNames);
     return funcNames;
   }
 
   runFunction(funcName) {
     var req = RunFunctionRequest(funcName: funcName);
     var res = client.runFunction(req);
-    res.then((data) => homeStream.sink.add(data.funcResponse));
+    res.then(setFuncRes);
   }
-
-  void dispose() {
-    subscription.cancel();
-    homeStream.close();
-  }
-}
-
-class _GrpcDemoState extends State<GrpcDemo> {
-  final home = Home();
-  final Stream<String> homeStream = Home().stream;
 
   onClickHandler(funcName) {
     setState(() {
-      home.runFunction(funcName);
-      home.funcResponse = "$funcName called success";
+      runFunction(funcName);
     });
   }
 
@@ -102,16 +87,14 @@ class _GrpcDemoState extends State<GrpcDemo> {
 
   Widget renderTextArea() {
     return Center(
-      child: Text(home.funcResponse),
+      child: Text(funcRes),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    getFuncNames();
     return Container(
-        child: Wrap(children: [
-      renderButtons(["funcOne", "funcTwo"]),
-      renderTextArea()
-    ]));
+        child: Wrap(children: [renderButtons(funcNames), renderTextArea()]));
   }
 }

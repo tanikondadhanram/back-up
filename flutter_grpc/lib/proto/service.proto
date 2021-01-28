@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package luatest;
+
+message RunFunctionRequest {
+          string funcName = 1;
+}
+
+message RunFunctionResponse {
+          string funcResponse = 1;
+}
+
+message GetNamesRequest{
+
+}
+
+message GetNamesResponse {
+          repeated string funcNames = 1;
+}
+
+service LuaService {
+          rpc RunFunction(RunFunctionRequest) returns (RunFunctionResponse);
+          rpc GetNames (GetNamesRequest) returns (GetNamesResponse);
+}
